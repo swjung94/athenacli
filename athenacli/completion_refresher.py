@@ -55,6 +55,7 @@ class CompletionRefresher(object):
         executor = SQLExecute(
             e.aws_access_key_id,
             e.aws_secret_access_key,
+            e.aws_session_token,
             e.region_name,
             e.s3_staging_dir,
             e.database

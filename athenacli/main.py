@@ -63,7 +63,7 @@ class AthenaCli(object):
     DEFAULT_PROMPT = '\\d@\\r> '
     MAX_LEN_PROMPT = 45
 
-    def __init__(self, region, aws_access_key_id, aws_secret_access_key,
+    def __init__(self, region, aws_access_key_id, aws_secret_access_key, aws_session_token,
                  s3_staging_dir, athenaclirc, profile, database):
 
         config_files = (DEFAULT_CONFIG_FILE, athenaclirc)
@@ -72,7 +72,7 @@ class AthenaCli(object):
         self.init_logging(_cfg['main']['log_file'], _cfg['main']['log_level'])
 
         aws_config = AWSConfig(
-            aws_access_key_id, aws_secret_access_key, region, s3_staging_dir, profile, _cfg
+            aws_access_key_id, aws_secret_access_key, aws_session_token, region, s3_staging_dir, profile, _cfg
         )
 
         try:
@@ -196,6 +196,7 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
         self.sqlexecute = SQLExecute(
             aws_config.aws_access_key_id,
             aws_config.aws_secret_access_key,
+            aws_config.aws_session_token,
             aws_config.region,
             aws_config.s3_staging_dir,
             database
@@ -636,11 +637,12 @@ def is_mutating(status):
 @click.option('-r', '--region', type=str, help="AWS region.")
 @click.option('--aws-access-key-id', type=str, help="AWS access key id.")
 @click.option('--aws-secret-access-key', type=str, help="AWS secretaccess key.")
+@click.option('--aws_session_token', type=str, help="AWS session token.")
 @click.option('--s3-staging-dir', type=str, help="Amazon S3 staging directory where query results are stored.")
 @click.option('--athenaclirc', default=ATHENACLIRC, type=click.Path(dir_okay=False), help="Location of athenaclirc file.")
 @click.option('--profile', type=str, default='default', help='AWS profile')
 @click.argument('database', default='default', nargs=1)
-def cli(execute, region, aws_access_key_id, aws_secret_access_key,
+def cli(execute, region, aws_access_key_id, aws_secret_access_key, aws_session_token,
         s3_staging_dir, athenaclirc, profile, database):
     '''A Athena terminal client with auto-completion and syntax highlighting.
 
@@ -668,7 +670,8 @@ def cli(execute, region, aws_access_key_id, aws_secret_access_key,
     athenacli = AthenaCli(
         region=region,
         aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key= aws_secret_access_key,
+        aws_secret_access_key=aws_secret_access_key,
+        aws_session_token=aws_session_token,
         s3_staging_dir=s3_staging_dir,
         athenaclirc=athenaclirc,
         profile=profile,
