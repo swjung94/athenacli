@@ -59,6 +59,14 @@ ATHENACLIRC = '~/.athenacli/athenaclirc'
 DEFAULT_CONFIG_FILE = os.path.join(PACKAGE_ROOT, 'athenaclirc')
 
 
+def human_readable(size, precision=2):
+    suffixes = ['B', 'KB', 'MB', 'GB', 'TB']
+    suffixIndex = 0
+    while size > 1024 and suffixIndex < 4:
+        suffixIndex += 1 #increment the index of the suffix
+        size = size/1024.0 #apply the division
+    return "%.*f%s"%(precision, size, suffixes[suffixIndex])
+
 class AthenaCli(object):
     DEFAULT_PROMPT = '\\d@\\r> '
     MAX_LEN_PROMPT = 45
@@ -297,7 +305,7 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
                 threshold = 1000
                 result_count = 0
 
-                for title, rows, headers, status in res:
+                for title, rows, headers, status, execution_time, data_scanned in res:
                     if rows and len(rows) > threshold:
                         self.echo(
                             'The result set has more than {} rows.'.format(threshold),
@@ -321,7 +329,8 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
                             pass
 
                         if special.is_timing_enabled():
-                            self.echo('Time: %0.03fs' % t)
+                            query_cost = data_scanned / 1000000000000.0 * 5.0
+                            self.echo('Time: %0.03fs, Data Scanned: %s, Cost: $%f' % (t, human_readable(data_scanned), query_cost))
                     except KeyboardInterrupt:
                         pass
 

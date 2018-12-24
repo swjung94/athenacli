@@ -79,10 +79,19 @@ class SQLExecute(object):
 
             try:
                 for result in special.execute(cur, sql):
-                    yield result
+                    res_info = self.get_info(cur)
+                    yield result + res_info
             except special.CommandNotFound:  # Regular SQL
                 cur.execute(sql)
-                yield self.get_result(cur)
+                res_info = self.get_info(cur)
+                yield self.get_result(cur) + res_info
+
+    def get_info(self, cursor):
+        stats = self.conn._client.get_query_execution(QueryExecutionId=cursor._query_id)
+        logger.debug(stats)
+        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis']
+        scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes']
+        return (execution_time, scanned_data)
 
     def get_result(self, cursor):
         '''Get the current result's data from the cursor.'''
