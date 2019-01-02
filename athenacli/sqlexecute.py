@@ -87,6 +87,8 @@ class SQLExecute(object):
                 yield self.get_result(cur) + res_info
 
     def get_info(self, cursor):
+        if cursor._query_id == None:
+            return (0, 0)
         stats = self.conn._client.get_query_execution(QueryExecutionId=cursor._query_id)
         logger.debug(stats)
         execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis']
