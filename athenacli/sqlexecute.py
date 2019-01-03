@@ -3,6 +3,8 @@
 import logging
 import sqlparse
 import pyathena
+import pymysql
+import os
 
 from athenacli.packages import special
 
@@ -25,7 +27,8 @@ class SQLExecute(object):
         aws_session_token,
         region_name,
         s3_staging_dir,
-        database
+        database,
+        query_db_info = None
     ):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
@@ -35,6 +38,7 @@ class SQLExecute(object):
         self.database = database
 
         self.connect()
+        self.query_db_connect(query_db_info)
 
     def connect(self, database=None):
         conn = pyathena.connect(
@@ -51,6 +55,34 @@ class SQLExecute(object):
         if hasattr(self, 'conn'):
             self.conn.close()
         self.conn = conn
+
+    def query_db_connect(self, query_db_info):
+        if hasattr(self, 'query_db_conn'):
+            self.query_db_conn.close()
+        if query_db_info == None:
+            self.query_db_conn = None
+            return
+        db_conn = pymysql.connect(host=query_db_info['host'],
+                  port=query_db_info['port'],
+                  user=query_db_info['user'],
+                  password=query_db_info['password'],
+                  db=query_db_info['db'],
+                  charset=query_db_info['charset'])
+        self.query_db_conn = db_conn
+
+    def insert_query_db(self, user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date):
+        if self.query_db_conn == None:
+            return
+        try:
+            query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
+                       values (%s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s)'''
+            with self.query_db_conn.cursor(pymysql.cursors.DictCursor) as curs:
+                rs = curs.execute(query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
+                self.quer_db_conn.commit()
+        except pymysql.InternalError as error:
+            code, message = error.args
+            logger.debug("pymysql error: {}, {}".format(code, message))
+        return rs
 
     def run(self, statement):
         '''Execute the sql in the database and return the results.
@@ -91,8 +123,17 @@ class SQLExecute(object):
             return (0, 0)
         stats = self.conn._client.get_query_execution(QueryExecutionId=cursor._query_id)
         logger.debug(stats)
+        query_id = stats['QueryExecution']['QueryExecutionId']
+        query = stats['QueryExecution']['Query']
+        state = stats['QueryExecution']['Status']['State']
+        state_change_reason = ''
+        output_path = stats['QueryExecution']['ResultConfiguration']['OutputLocation']
         execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis']
         scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes']
+        running_cost = scanned_data / 1000000000000.0 * 5.0
+        mod_date = stats['QueryExecution']['Status']['CompletionDateTime'] 
+        reg_date = stats['QueryExecution']['Status']['SubmissionDateTime'] 
+        self.insert_query_db(os.getenv['user_id'], query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
         return (execution_time, scanned_data)
 
     def get_result(self, cursor):

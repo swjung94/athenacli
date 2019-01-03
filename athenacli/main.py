@@ -207,7 +207,10 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
             aws_config.aws_session_token,
             aws_config.region,
             aws_config.s3_staging_dir,
-            database
+            database,
+            { 'host':aws_config.host, 'port':aws_config.port,
+              'user':aws_config.user, 'password':aws_config.password,
+              'db':aws_config.db, 'charset':aws_config.charset }
         )
 
     def handle_editor_command(self, cli, document):
