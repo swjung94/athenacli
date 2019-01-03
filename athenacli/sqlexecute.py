@@ -63,7 +63,7 @@ class SQLExecute(object):
             self.query_db_conn = None
             return
         db_conn = pymysql.connect(host=query_db_info['host'],
-                  port=query_db_info['port'],
+                  port=int(query_db_info['port']),
                   user=query_db_info['user'],
                   password=query_db_info['password'],
                   db=query_db_info['db'],
@@ -72,13 +72,16 @@ class SQLExecute(object):
 
     def insert_query_db(self, user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date):
         if self.query_db_conn == None:
+            logger.debug('query_db_conn is None')
             return
         try:
-            query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
-                       values (%s, %s, %s, %s, %s, %s, %d, %s, %s, %s, %s)'''
+            run_query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
+                       values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''' 
+            # % (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time,mod_date, reg_date)
+            #logger.debug(query)
             with self.query_db_conn.cursor(pymysql.cursors.DictCursor) as curs:
-                rs = curs.execute(query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
-                self.quer_db_conn.commit()
+                rs = curs.execute(run_query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
+                self.query_db_conn.commit()
         except pymysql.InternalError as error:
             code, message = error.args
             logger.debug("pymysql error: {}, {}".format(code, message))
@@ -123,17 +126,18 @@ class SQLExecute(object):
             return (0, 0)
         stats = self.conn._client.get_query_execution(QueryExecutionId=cursor._query_id)
         logger.debug(stats)
+        user = os.getenv('user_id')
         query_id = stats['QueryExecution']['QueryExecutionId']
         query = stats['QueryExecution']['Query']
         state = stats['QueryExecution']['Status']['State']
         state_change_reason = ''
         output_path = stats['QueryExecution']['ResultConfiguration']['OutputLocation']
-        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis']
+        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0
         scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes']
         running_cost = scanned_data / 1000000000000.0 * 5.0
         mod_date = stats['QueryExecution']['Status']['CompletionDateTime'] 
         reg_date = stats['QueryExecution']['Status']['SubmissionDateTime'] 
-        self.insert_query_db(os.getenv['user_id'], query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
+        self.insert_query_db(user, query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
         return (execution_time, scanned_data)
 
     def get_result(self, cursor):

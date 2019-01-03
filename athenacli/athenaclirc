@@ -12,6 +12,14 @@ region = '' # e.g us-west-2, us-east-1
 # The format is 's3://<your s3 directory path>'
 s3_staging_dir = ''
 
+[query_db]
+host = ''
+port = 3306
+user = ''
+password = ''
+db = ''
+charset = 'utf8'
+
 [main]
 # log_file location.
 log_file = ~/.athenacli/app.log
