@@ -251,13 +251,19 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
             click.echo(message)
             return
 
+        start = time()
         results = self.sqlexecute.run(query)
-        for result in results:
+        for i, result in enumerate(results):
             title, rows, headers, status, execution_time, data_scanned = result
             self.formatter.query = query
             output = self.format_output(title, rows, headers)
             for line in output:
                 click.echo(line, nl=new_line)
+            t = time() - start
+            if special.is_timing_enabled():
+                query_cost = data_scanned / 1000000000000.0 * 5.0
+                click.echo('[query %d] Time: %0.03fs, Data Scanned: %s, Cost: $%f' % (i, t, human_readable(data_scanned), query_cost), err=True)
+            start = time()
 
     def run_cli(self):
         self.iterations = 0
