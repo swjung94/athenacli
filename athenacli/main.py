@@ -253,7 +253,7 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
 
         results = self.sqlexecute.run(query)
         for result in results:
-            title, rows, headers, _ = result
+            title, rows, headers, status, execution_time, data_scanned = result
             self.formatter.query = query
             output = self.format_output(title, rows, headers)
             for line in output:
