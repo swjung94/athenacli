@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 def keyboardInterruptHandler(signal, frame):
     raise KeyboardInterrupt
 
+signal.signal(signal.SIGINT, keyboardInterruptHandler)
+
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
     TABLES_QUERY = 'SHOW TABLES'
