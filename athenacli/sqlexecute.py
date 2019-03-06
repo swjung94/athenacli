@@ -87,7 +87,7 @@ class SQLExecute(object):
             logger.debug("pymysql error: {}, {}".format(code, message))
         return rs
 
-    def run(self, statement):
+    def run(self, statement, is_part=True):
         '''Execute the sql in the database and return the results.
 
         The results are a list of tuples. Each tuple has 4 values
@@ -96,7 +96,7 @@ class SQLExecute(object):
         # Remove spaces and EOL
         statement = statement.strip()
         if not statement:  # Empty string
-            yield (None, None, None, None)
+            yield (None, None, None, None, None, None)
 
         # Split the sql into separate queries and run each one.
         components = sqlparse.split(statement)
@@ -119,7 +119,7 @@ class SQLExecute(object):
             except special.CommandNotFound:  # Regular SQL
                 cur.execute(sql)
                 res_info = self.get_info(cur)
-                yield self.get_result(cur) + res_info
+                yield self.get_result(cur, is_part) + res_info
 
     def get_info(self, cursor):
         if cursor._query_id == None:
@@ -140,7 +140,7 @@ class SQLExecute(object):
         self.insert_query_db(user, query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
         return (execution_time, scanned_data)
 
-    def get_result(self, cursor):
+    def get_result(self, cursor, is_part=True):
         '''Get the current result's data from the cursor.'''
         title = headers = None
 
@@ -148,7 +148,10 @@ class SQLExecute(object):
         # e.g. SELECT or SHOW.
         if cursor.description is not None:
             headers = [x[0] for x in cursor.description]
-            rows = cursor.fetchall()
+            if is_part == True:
+                rows = cursor.fetchmany()
+            else:
+                rows = cursor.fetchall()
             status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
         else:
             logger.debug('No rows in result.')
