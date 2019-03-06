@@ -5,11 +5,14 @@ import sqlparse
 import pyathena
 import pymysql
 import os
+import signal
 
 from athenacli.packages import special
 
 logger = logging.getLogger(__name__)
 
+def keyboardInterruptHandler(signal, frame):
+    raise KeyboardInterrupt
 
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
@@ -146,18 +149,21 @@ class SQLExecute(object):
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
-        if cursor.description is not None:
-            headers = [x[0] for x in cursor.description]
-            if is_part == True:
-                rows = cursor.fetchmany()
+        try:
+            if cursor.description is not None:
+                headers = [x[0] for x in cursor.description]
+                if is_part == True:
+                    rows = cursor.fetchmany()
+                else:
+                    rows = cursor.fetchall()
+                status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
             else:
-                rows = cursor.fetchall()
-            status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
-        else:
-            logger.debug('No rows in result.')
-            rows = None
-            status = 'Query OK'
-        return (title, rows, headers, status)
+                logger.debug('No rows in result.')
+                rows = None
+                status = 'Query OK'
+            return (title, rows, headers, status)
+        except KeyboardInterrupt:
+            return (None, None, None, 'Keyboard Interrupt')
 
     def tables(self):
         '''Yields table names.'''
