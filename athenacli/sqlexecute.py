@@ -155,13 +155,13 @@ class SQLExecute(object):
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
         try:
-            cursor = future.result()
-            if cursor.description is not None:
-                headers = [x[0] for x in cursor.description]
+            result_set = future.result()
+            if result_set.description is not None:
+                headers = [x[0] for x in result_set.description]
                 if is_part == True:
-                    rows = cursor.fetchmany()
+                    rows = result_set.fetchmany()
                 else:
-                    rows = cursor.fetchall()
+                    rows = result_set.fetchall()
                 status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 logger.debug('No rows in result.')
