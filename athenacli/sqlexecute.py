@@ -157,9 +157,7 @@ class SQLExecute(object):
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
         try:
-            running = True
-            while running:
-                running = future.running()
+            while future.running():
                 click.echo(".", err=True, nl=False)
                 time.sleep(1)
             result_set = future.result()
@@ -168,7 +166,13 @@ class SQLExecute(object):
                 if is_part == True:
                     rows = result_set.fetchmany()
                 else:
-                    rows = result_set.fetchall()
+                    #rows = result_set.fetchall()
+                    rows = []
+                    for i, row in enumerate(result_set):
+                        rows.append(row)
+                        if i % 10000 == 0:
+                            click.echo("*", err=True, nl=False)
+                click.echo("", err=True)
                 status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 logger.debug('No rows in result.')
