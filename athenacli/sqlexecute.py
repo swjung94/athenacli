@@ -157,11 +157,11 @@ class SQLExecute(object):
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
         try:
-			running = True
-			while running:
-    			running = future.running()
-    			click.echo(".", nl=False)
-    			time.sleep(1)
+            running = True
+            while running:
+                running = future.running()
+                click.echo(".", nl=False)
+                time.sleep(1)
             result_set = future.result()
             if result_set.description is not None:
                 headers = [x[0] for x in result_set.description]
