@@ -160,7 +160,7 @@ class SQLExecute(object):
             running = True
             while running:
                 running = future.running()
-                click.echo(".", nl=False)
+                click.echo(".", err=True, nl=False)
                 time.sleep(1)
             result_set = future.result()
             if result_set.description is not None:
