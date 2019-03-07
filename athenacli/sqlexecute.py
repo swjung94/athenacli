@@ -9,6 +9,8 @@ import os
 import signal
 import click
 import time
+import requests
+import json
 
 from athenacli.packages import special
 
@@ -108,6 +110,7 @@ class SQLExecute(object):
 
         # Split the sql into separate queries and run each one.
         components = sqlparse.split(statement)
+        headers = {"Content-Type" : "application/json"}
 
         for sql in components:
             # Remove spaces, eol and semi-colons.
@@ -125,7 +128,16 @@ class SQLExecute(object):
                     res_info = self.get_info(cur._query_id)
                     yield result + res_info
             except special.CommandNotFound:  # Regular SQL
-                cur = self.conn.cursor(AsyncCursor) # add
+                query_est_data = { "query": sql }
+                query_est_res = json.loads(requests.post("https://2uyn4r7de8.execute-api.ap-northeast-2.amazonaws.com/dev/prediction",json=query_est_data,headers=headers).text)
+                if query_est_res['status'] == 200:
+                    if query_est_res['result']['prediction'] == 'Low':
+                        click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
+                    else:
+                        click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True, fg='red')
+                else:
+                    click.echo("Can't estimate query cost...", err=True)
+                cur = self.conn.cursor(AsyncCursor) # add, for cancel query
                 query_id, future = cur.execute(sql)
                 res_result = self.get_result(query_id, future, is_part)
                 res_info = self.get_info(query_id)
