@@ -83,7 +83,7 @@ class SQLExecute(object):
             run_query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
                        values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''' 
             # % (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time,mod_date, reg_date)
-            #logger.debug(query)
+            logger.debug(query)
             with self.query_db_conn.cursor(pymysql.cursors.DictCursor) as curs:
                 rs = curs.execute(run_query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
                 self.query_db_conn.commit()
