@@ -3,6 +3,7 @@
 import logging
 import sqlparse
 import pyathena
+from pyathena.async_cursor import AsyncCursor
 import pymysql
 import os
 import signal
@@ -119,17 +120,19 @@ class SQLExecute(object):
 
             try:
                 for result in special.execute(cur, sql):
-                    res_info = self.get_info(cur)
+                    res_info = self.get_info(cur._query_id)
                     yield result + res_info
             except special.CommandNotFound:  # Regular SQL
-                cur.execute(sql)
-                res_info = self.get_info(cur)
-                yield self.get_result(cur, is_part) + res_info
+                cur = self.conn.cursor(AsyncCursor) # add
+                query_id, future = cur.execute(sql)
+                res_result = self.get_result(query_id, future, is_part)
+                res_info = self.get_info(query_id)
+                yield res_result + res_info
 
-    def get_info(self, cursor):
-        if cursor._query_id == None:
+    def get_info(self, query_id):
+        if query_id == None:
             return (0, 0)
-        stats = self.conn._client.get_query_execution(QueryExecutionId=cursor._query_id)
+        stats = self.conn._client.get_query_execution(QueryExecutionId=query_id)
         logger.debug(stats)
         user = os.getenv('user_id')
         query_id = stats['QueryExecution']['QueryExecutionId']
@@ -145,13 +148,14 @@ class SQLExecute(object):
         self.insert_query_db(user, query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
         return (execution_time, scanned_data)
 
-    def get_result(self, cursor, is_part=True):
+    def get_result(self, query_id, future, is_part=True):
         '''Get the current result's data from the cursor.'''
         title = headers = None
 
         # cursor.description is not None for queries that return result sets,
         # e.g. SELECT or SHOW.
         try:
+            cursor = future.result()
             if cursor.description is not None:
                 headers = [x[0] for x in cursor.description]
                 if is_part == True:
@@ -165,6 +169,8 @@ class SQLExecute(object):
                 status = 'Query OK'
             return (title, rows, headers, status)
         except KeyboardInterrupt:
+            cur = self.conn.cursor(AsyncCursor)
+            cur.cancel(query_id)
             return (None, None, None, 'Keyboard Interrupt')
 
     def tables(self):
