@@ -134,7 +134,7 @@ class SQLExecute(object):
                     if query_est_res['result']['prediction'] == 'Low':
                         click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
                     else:
-                        click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True, fg='red')
+                        click.secho("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True, fg='red')
                 else:
                     click.echo("Can't estimate query cost...", err=True)
                 cur = self.conn.cursor(AsyncCursor) # add, for cancel query
