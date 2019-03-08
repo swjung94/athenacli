@@ -21,6 +21,8 @@ def keyboardInterruptHandler(signal, frame):
 
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
+QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
+
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
     TABLES_QUERY = 'SHOW TABLES'
@@ -129,7 +131,7 @@ class SQLExecute(object):
                     yield result + res_info
             except special.CommandNotFound:  # Regular SQL
                 query_est_data = { "query": sql }
-                query_est_res = json.loads(requests.post("https://2uyn4r7de8.execute-api.ap-northeast-2.amazonaws.com/dev/prediction",json=query_est_data,headers=headers).text)
+                query_est_res = json.loads(requests.post( QUERY_COST_SERVICE_URL+"/prediction", json=query_est_data, headers=headers ).text)
                 if query_est_res['status'] == 200:
                     if query_est_res['result']['prediction'] == 'Low':
                         click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
