@@ -149,17 +149,19 @@ class SQLExecute(object):
 
     def get_info(self, query_id):
         if query_id == None:
-            return (0, 0)
+            return (None, None)
         stats = self.conn._client.get_query_execution(QueryExecutionId=query_id)
         logger.debug(stats)
         user = os.getenv('user_id')
         query_id = stats['QueryExecution']['QueryExecutionId']
         query = stats['QueryExecution']['Query']
         state = stats['QueryExecution']['Status']['State']
+        if state != 'SUCCEEDED':
+            return (None, None)
         state_change_reason = ''
         output_path = stats['QueryExecution']['ResultConfiguration']['OutputLocation']
-        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0 if 'EngineExecutionTimeInMillis' in stats['QueryExecution']['Statistics'] else 0.0
-        scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes'] if 'DataScannedInBytes' in stats['QueryExecution']['Statistics'] else 0
+        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0
+        scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes']
         running_cost = scanned_data / 1000000000000.0 * 5.0
         mod_date = stats['QueryExecution']['Status']['CompletionDateTime']
         reg_date = stats['QueryExecution']['Status']['SubmissionDateTime'] 
