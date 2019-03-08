@@ -75,12 +75,12 @@ class SQLExecute(object):
             self.query_db_conn = None
             return
         db_conn = pymysql.connect(
-                  host     = os.setenv('RDB_HOST', query_db_info['host']),
-                  port     = int(os.setenv('RDB_PORT', query_db_info['port'])),
-                  user     = os.setenv('RDB_USER', query_db_info['user']),
-                  password = os.setenv('RDB_PASSWORD', query_db_info['password']),
-                  db       = os.setenv('RDB_DBNAME', query_db_info['db']),
-                  charset  = os.setenv('RDB_CHARSET', query_db_info['charset'])
+                  host     = os.getenv('RDB_HOST', query_db_info['host']),
+                  port     = int(os.getenv('RDB_PORT', query_db_info['port'])),
+                  user     = os.getenv('RDB_USER', query_db_info['user']),
+                  password = os.getenv('RDB_PASSWORD', query_db_info['password']),
+                  db       = os.getenv('RDB_DBNAME', query_db_info['db']),
+                  charset  = os.getenv('RDB_CHARSET', query_db_info['charset'])
                   )
         self.query_db_conn = db_conn
 
