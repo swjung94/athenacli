@@ -134,7 +134,7 @@ class SQLExecute(object):
             except special.CommandNotFound:  # Regular SQL
                 query_est_data = { "query": sql }
                 query_est_res = json.loads(requests.post( QUERY_COST_SERVICE_URL+"/prediction", json=query_est_data, headers=headers ).text)
-                if query_est_res['status'] == 200:
+                if (query_est_res is not None) and ('status' in query_est_res) and (query_est_res['status'] == 200):
                     if query_est_res['result']['prediction'] == 'Low':
                         click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
                     else:
