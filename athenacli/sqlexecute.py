@@ -197,7 +197,7 @@ class SQLExecute(object):
                         if i % 10000 == 0:
                             click.echo("*", err=True, nl=False)
                 click.secho("\n[Download] aws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
-                status = '%d row%s in display, Max is 1000' % (len(rows), '' if len(rows) == 1 else 's')
+                status = '%d row%s in display. Max is 1000' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 click.echo("", err=True);
                 logger.debug(result_set.state_change_reason)
