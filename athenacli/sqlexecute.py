@@ -74,12 +74,14 @@ class SQLExecute(object):
         if query_db_info == None:
             self.query_db_conn = None
             return
-        db_conn = pymysql.connect(host=query_db_info['host'],
-                  port=int(query_db_info['port']),
-                  user=query_db_info['user'],
-                  password=query_db_info['password'],
-                  db=query_db_info['db'],
-                  charset=query_db_info['charset'])
+        db_conn = pymysql.connect(
+                  host     = os.setenv('RDB_HOST', query_db_info['host']),
+                  port     = int(os.setenv('RDB_PORT', query_db_info['port'])),
+                  user     = os.setenv('RDB_USER', query_db_info['user']),
+                  password = os.setenv('RDB_PASSWORD', query_db_info['password']),
+                  db       = os.setenv('RDB_DBNAME', query_db_info['db']),
+                  charset  = os.setenv('RDB_CHARSET', query_db_info['charset'])
+                  )
         self.query_db_conn = db_conn
 
     def insert_query_db(self, user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date):
