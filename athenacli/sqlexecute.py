@@ -185,7 +185,7 @@ class SQLExecute(object):
             logger.debug(result_set.execution_time_in_millis)
             logger.debug(result_set.output_location)
             logger.debug(result_set.description) 
-            if result_set.description is not None:
+            if (result_set.state == 'SUCCEEDED') and (result_set.description is not None):
                 headers = [x[0] for x in result_set.description]
                 if is_part == True:
                     rows = result_set.fetchmany()
@@ -196,12 +196,12 @@ class SQLExecute(object):
                         rows.append(row)
                         if i % 10000 == 0:
                             click.echo("*", err=True, nl=False)
-                click.secho("aws s3 cp " + result_set.output_location + " . --recursive", err=True, fg='green')
+                click.secho("\naws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
                 status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
             else:
-                logger.debug('No rows in result.')
+                logger.debug(result_set.state_change_reason)
                 rows = None
-                status = 'Query OK'
+                status = result_set.state_change_reason 
             return (title, rows, headers, status)
         except KeyboardInterrupt:
             cur = self.conn.cursor(AsyncCursor)
