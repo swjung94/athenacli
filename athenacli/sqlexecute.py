@@ -158,10 +158,10 @@ class SQLExecute(object):
         state = stats['QueryExecution']['Status']['State']
         state_change_reason = ''
         output_path = stats['QueryExecution']['ResultConfiguration']['OutputLocation']
-        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0
-        scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes']
+        execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0 if 'EngineExecutionTimeInMillis' in stats['QueryExecution']['Statistics'] else 0.0
+        scanned_data = stats['QueryExecution']['Statistics']['DataScannedInBytes'] if 'DataScannedInBytes' in stats['QueryExecution']['Statistics'] else 0
         running_cost = scanned_data / 1000000000000.0 * 5.0
-        mod_date = stats['QueryExecution']['Status']['CompletionDateTime'] 
+        mod_date = stats['QueryExecution']['Status']['CompletionDateTime']
         reg_date = stats['QueryExecution']['Status']['SubmissionDateTime'] 
         self.insert_query_db(user, query_id, query, state, state_change_reason, output_path, scanned_data, running_cost, execution_time, mod_date, reg_date)
         return (execution_time, scanned_data)
