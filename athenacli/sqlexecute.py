@@ -149,7 +149,7 @@ class SQLExecute(object):
 
     def get_info(self, query_id):
         if query_id == None:
-            return (None, None)
+            return (0, 0)
         stats = self.conn._client.get_query_execution(QueryExecutionId=query_id)
         logger.debug(stats)
         user = os.getenv('user_id')
@@ -157,7 +157,7 @@ class SQLExecute(object):
         query = stats['QueryExecution']['Query']
         state = stats['QueryExecution']['Status']['State']
         if state != 'SUCCEEDED':
-            return (None, None)
+            return (0, 0)
         state_change_reason = ''
         output_path = stats['QueryExecution']['ResultConfiguration']['OutputLocation']
         execution_time = stats['QueryExecution']['Statistics']['EngineExecutionTimeInMillis'] / 1000.0
