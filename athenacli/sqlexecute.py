@@ -196,9 +196,10 @@ class SQLExecute(object):
                         rows.append(row)
                         if i % 10000 == 0:
                             click.echo("*", err=True, nl=False)
-                click.secho("\naws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
+                click.secho("\n[info] aws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
                 status = '%d row%s in set' % (len(rows), '' if len(rows) == 1 else 's')
             else:
+                click.echo("", err=True);
                 logger.debug(result_set.state_change_reason)
                 rows = None
                 status = result_set.state_change_reason 
