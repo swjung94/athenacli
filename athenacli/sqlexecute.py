@@ -202,7 +202,7 @@ class SQLExecute(object):
                 status = '%d row%s in display. Max is 1000' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 click.echo("", err=True);
-                click.echo(result_set.state_change_reason, err=True)
+                click.secho(result_set.state_change_reason, err=True, fg='red')
                 rows = None
                 status = result_set.state_change_reason 
             return (title, rows, headers, status)
