@@ -204,12 +204,13 @@ class SQLExecute(object):
                 click.echo("", err=True);
                 click.secho(result_set.state_change_reason, err=True, fg='red')
                 rows = None
-                status = result_set.state_change_reason 
+                status = None # result_set.state_change_reason 
             return (title, rows, headers, status)
         except KeyboardInterrupt:
             cur = self.conn.cursor(AsyncCursor)
             cur.cancel(query_id)
-            return (None, None, None, 'Keyboard Interrupt')
+            click.secho('Keyboard Interrupt', err=True, fg='red')
+            return (None, None, None, None)
 
     def tables(self):
         '''Yields table names.'''
