@@ -335,7 +335,7 @@ For more details about the error, you can check the log file: %s''' % (ATHENACLI
                         except KeyboardInterrupt:
                             pass
 
-                        if special.is_timing_enabled():
+                        if status != None:
                             query_cost = data_scanned / 1000000000000.0 * 5.0
                             self.echo('Time: %0.03fs, Data Scanned: %s, Cost: $%f' % (t, human_readable(data_scanned), query_cost))
                     except KeyboardInterrupt:
