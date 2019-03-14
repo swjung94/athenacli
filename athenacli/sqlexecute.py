@@ -203,6 +203,7 @@ class SQLExecute(object):
             else:
                 click.echo("", err=True);
                 logger.debug(result_set.state_change_reason)
+                click.echo(result_set.state_change_reason, err=True)
                 rows = None
                 status = result_set.state_change_reason 
             return (title, rows, headers, status)
