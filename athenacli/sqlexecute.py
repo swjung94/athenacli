@@ -199,6 +199,7 @@ class SQLExecute(object):
                         rows.append(row)
                         if i % 10000 == 0:
                             click.echo("*", err=True, nl=False)
+                    click.secho("\n", err=True, fg='cyan')
                 status = '%d row%s in display. Max is 1000' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 click.echo("", err=True);
