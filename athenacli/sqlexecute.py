@@ -189,6 +189,7 @@ class SQLExecute(object):
             logger.debug(result_set.description) 
             if (result_set.state == 'SUCCEEDED') and (result_set.description is not None):
                 headers = [x[0] for x in result_set.description]
+                click.secho("\n[Download] aws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
                 if is_part == True:
                     rows = result_set.fetchmany()
                 else:
@@ -198,7 +199,6 @@ class SQLExecute(object):
                         rows.append(row)
                         if i % 10000 == 0:
                             click.echo("*", err=True, nl=False)
-                click.secho("\n[Download] aws s3 cp " + result_set.output_location + " .", err=True, fg='cyan')
                 status = '%d row%s in display. Max is 1000' % (len(rows), '' if len(rows) == 1 else 's')
             else:
                 click.echo("", err=True);
