@@ -11,6 +11,7 @@ import click
 import time
 import requests
 import json
+import boto3
 
 from athenacli.packages import special
 
@@ -22,6 +23,14 @@ def keyboardInterruptHandler(signal, frame):
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
 QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
+
+def get_parameter_value(Name, default=None, WithDecryption=False):
+    try:
+        session = boto3.Session(region_name='ap-northeast-2')
+        ssm = session.client('ssm')
+        return ssm.get_parameter(Name=Name, WithDecryption=WithDecryption)['Parameter']['Value']
+    except:
+        return default
 
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
@@ -78,7 +87,7 @@ class SQLExecute(object):
                   host     = os.getenv('RDB_HOST', query_db_info['host']),
                   port     = int(os.getenv('RDB_PORT', query_db_info['port'])),
                   user     = os.getenv('RDB_USER', query_db_info['user']),
-                  password = os.getenv('RDB_PASSWORD', query_db_info['password']),
+		  password = get_parameter_value('/skinet/aurora/password', query_db_info['password'], WithDecryption=True),
                   db       = os.getenv('RDB_DBNAME', query_db_info['db']),
                   charset  = os.getenv('RDB_CHARSET', query_db_info['charset'])
                   )
