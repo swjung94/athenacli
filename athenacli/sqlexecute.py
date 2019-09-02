@@ -22,8 +22,6 @@ def keyboardInterruptHandler(signal, frame):
 
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
-
 def get_parameter_value(Name, default=None, WithDecryption=False):
     try:
         session = boto3.Session(region_name='ap-northeast-2')
@@ -31,6 +29,8 @@ def get_parameter_value(Name, default=None, WithDecryption=False):
         return ssm.get_parameter(Name=Name, WithDecryption=WithDecryption)['Parameter']['Value']
     except:
         return default
+
+QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
 
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
@@ -55,7 +55,7 @@ class SQLExecute(object):
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_session_token = aws_session_token
         self.region_name = region_name
-        self.s3_staging_dir = os.getenv('ATHENA_TARGET_OUTPUT', s3_staging_dir)
+        self.s3_staging_dir = get_parameter_value('/skinet/key-value/athena/target_output', s3_staging_dir)
         self.database = database
 
         self.connect()
@@ -161,7 +161,7 @@ class SQLExecute(object):
             return (0, 0)
         stats = self.conn._client.get_query_execution(QueryExecutionId=query_id)
         logger.debug(stats)
-        user = os.getenv('user_id')
+        user = os.getenv('user_id', 'None')
         query_id = stats['QueryExecution']['QueryExecutionId']
         query = stats['QueryExecution']['Query']
         state = stats['QueryExecution']['Status']['State']
