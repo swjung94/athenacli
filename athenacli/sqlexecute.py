@@ -85,12 +85,12 @@ class SQLExecute(object):
     #        self.query_db_conn = None
     #        return
     #    db_conn = pymysql.connect(
-    #              host     = get_parameter_value('/skinet/key-value/aurora/host', query_db_info['host']),
-    #              port     = int(get_parameter_value('/skinet/key-value/aurora/port', query_db_info['port'])),
-    #              user     = get_parameter_value('/skinet/key-value/aurora/user', query_db_info['user']),
-    #              password = get_parameter_value('/skinet/key-value/aurora/password', query_db_info['password'], WithDecryption=True),
-    #              db       = get_parameter_value('/skinet/key-value/aurora/db', query_db_info['db']),
-    #              charset  = get_parameter_value('/skinet/key-value/aurora/charset', query_db_info['charset'])
+    #              host     = query_db_info['host'],
+    #              port     = int(query_db_info['port']),
+    #              user     = query_db_info['user'],
+    #              password = query_db_info['password'],
+    #              db       = query_db_info['db'],
+    #              charset  = query_db_info['charset']
     #              )
     #    self.query_db_conn = db_conn
 
@@ -126,10 +126,10 @@ class SQLExecute(object):
         }
         query_db_res = json.loads(requests.post( QUERY_SERVICE_URL+"/put_query_log", json=query_db_data, headers=headers ).text)
         if (query_db_res is not None) and ('result' in query_db_res) and (query_db_res['result'] == 'success'):
-            click.echo("query db insert success", err=True)
+            #click.echo("query db insert success", err=True)
             rs = 0
         else:
-            click.echo("query db insert fail", err=True)
+            #click.echo("query db insert fail", err=True)
             rs = -1
         return rs
 
