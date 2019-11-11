@@ -126,10 +126,10 @@ class SQLExecute(object):
         }
         query_db_res = json.loads(requests.post( QUERY_SERVICE_URL+"/put_query_log", json=query_db_data, headers=headers ).text)
         if (query_db_res is not None) and ('result' in query_db_res) and (query_db_res['result'] == 'success'):
-            #click.echo("query db insert success", err=True)
+            click.echo("query history insert success", err=True)
             rs = 0
         else:
-            #click.echo("query db insert fail", err=True)
+            click.echo("query history insert fail", err=True)
             rs = -1
         return rs
 
