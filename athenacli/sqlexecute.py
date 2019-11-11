@@ -31,6 +31,7 @@ def get_parameter_value(Name, default=None, WithDecryption=False):
         return default
 
 QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
+QUERY_SERVICE_URL = get_parameter_value("/skinet/key-value/apigateway/skn_athena")
 
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
@@ -59,7 +60,7 @@ class SQLExecute(object):
         self.database = database
 
         self.connect()
-        self.query_db_connect(query_db_info)
+    #    self.query_db_connect(query_db_info)
 
     def connect(self, database=None):
         conn = pyathena.connect(
@@ -77,37 +78,59 @@ class SQLExecute(object):
             self.conn.close()
         self.conn = conn
 
-    def query_db_connect(self, query_db_info):
-        if hasattr(self, 'query_db_conn'):
-            self.query_db_conn.close()
-        if query_db_info == None:
-            self.query_db_conn = None
-            return
-        db_conn = pymysql.connect(
-                  host     = get_parameter_value('/skinet/key-value/aurora/host', query_db_info['host']),
-                  port     = int(get_parameter_value('/skinet/key-value/aurora/port', query_db_info['port'])),
-                  user     = get_parameter_value('/skinet/key-value/aurora/user', query_db_info['user']),
-                  password = get_parameter_value('/skinet/key-value/aurora/password', query_db_info['password'], WithDecryption=True),
-                  db       = get_parameter_value('/skinet/key-value/aurora/db', query_db_info['db']),
-                  charset  = get_parameter_value('/skinet/key-value/aurora/charset', query_db_info['charset'])
-                  )
-        self.query_db_conn = db_conn
+    #def query_db_connect(self, query_db_info):
+    #    if hasattr(self, 'query_db_conn'):
+    #        self.query_db_conn.close()
+    #    if query_db_info == None:
+    #        self.query_db_conn = None
+    #        return
+    #    db_conn = pymysql.connect(
+    #              host     = get_parameter_value('/skinet/key-value/aurora/host', query_db_info['host']),
+    #              port     = int(get_parameter_value('/skinet/key-value/aurora/port', query_db_info['port'])),
+    #              user     = get_parameter_value('/skinet/key-value/aurora/user', query_db_info['user']),
+    #              password = get_parameter_value('/skinet/key-value/aurora/password', query_db_info['password'], WithDecryption=True),
+    #              db       = get_parameter_value('/skinet/key-value/aurora/db', query_db_info['db']),
+    #              charset  = get_parameter_value('/skinet/key-value/aurora/charset', query_db_info['charset'])
+    #              )
+    #    self.query_db_conn = db_conn
+
+    #def insert_query_db_old(self, user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date):
+    #    if self.query_db_conn == None:
+    #        logger.debug('query_db_conn is None')
+    #        return
+    #    try:
+    #        run_query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
+    #                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''' 
+    #        # % (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time,mod_date, reg_date)
+    #        logger.debug(query)
+    #        with self.query_db_conn.cursor(pymysql.cursors.DictCursor) as curs:
+    #            rs = curs.execute(run_query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
+    #            self.query_db_conn.commit()
+    #    except pymysql.InternalError as error:
+    #        code, message = error.args
+    #        logger.debug("pymysql error: {}, {}".format(code, message))
+    #    return rs
 
     def insert_query_db(self, user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date):
-        if self.query_db_conn == None:
-            logger.debug('query_db_conn is None')
-            return
-        try:
-            run_query = '''insert into athena_query(user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date)
-                       values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''' 
-            # % (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time,mod_date, reg_date)
-            logger.debug(query)
-            with self.query_db_conn.cursor(pymysql.cursors.DictCursor) as curs:
-                rs = curs.execute(run_query, (user, query_id, query, state, state_change_reason, output_path, scan_size, running_cost, running_time, mod_date, reg_date))
-                self.query_db_conn.commit()
-        except pymysql.InternalError as error:
-            code, message = error.args
-            logger.debug("pymysql error: {}, {}".format(code, message))
+        headers = {"Content-Type" : "application/json"}
+        query_db_data = {
+            "user_id": user,
+            "query_id": query_id,
+            "query": query, 
+            "state": state,
+            "state_change_reason": state_change_reason,
+            "output_path": output_path,
+            "scan_size": int(scan_size),
+            "running_cost": float(running_cost),
+            "running_time": float(running_time) 
+        }
+        query_db_res = json.loads(requests.post( QUERY_SERVICE_URL+"/put_query_log", json=query_db_data, headers=headers ).text)
+        if (query_db_res is not None) and ('result' in query_db_res) and (query_db_res['result'] == 'success'):
+            click.echo("query db insert success", err=True)
+            rs = 0
+        else:
+            click.echo("query db insert fail", err=True)
+            rs = -1
         return rs
 
     def run(self, statement, is_part=True):
