@@ -123,8 +123,11 @@ class AthenaCompleter(Completer):
 
         metadata = self.dbmetadata[kind]
         for relname, column in column_data:
-            metadata[self.dbname][relname].append(column)
-            self.all_completions.add(column)
+            try:
+                metadata[self.dbname][relname].append(column)
+                self.all_completions.add(column)
+            except Exception:
+                _logger.error("swjung: %r %r append %r error", self.dbname, relname, column)
 
     def extend_functions(self, func_data):
         # 'func_data' is a generator object. It can throw an exception while
