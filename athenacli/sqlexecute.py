@@ -166,14 +166,17 @@ class SQLExecute(object):
                     yield result + res_info
             except special.CommandNotFound:  # Regular SQL
                 query_est_data = { "query": sql }
-                query_est_res = json.loads(requests.post( QUERY_COST_SERVICE_URL+"/prediction", json=query_est_data, headers=headers ).text)
-                if (query_est_res is not None) and ('status' in query_est_res) and (query_est_res['status'] == 200):
-                    if query_est_res['result']['prediction'] == 'Low':
-                        click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
+                if QUERY_COST_SERVICE_URL not in ['None', 'TODO']:
+                    query_est_res = json.loads(requests.post( QUERY_COST_SERVICE_URL+"/prediction", json=query_est_data, headers=headers ).text)
+                    if (query_est_res is not None) and ('status' in query_est_res) and (query_est_res['status'] == 200):
+                        if query_est_res['result']['prediction'] == 'Low':
+                            click.echo("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True)
+                        else:
+                            click.secho("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True, fg='red')
                     else:
-                        click.secho("estimated query cost is {}".format(query_est_res['result']['prediction']), err=True, fg='red')
+                        click.echo("Can't estimate query cost...", err=True)
                 else:
-                    click.echo("Can't estimate query cost...", err=True)
+                    click.echo("Can't service query cost... please check QUERY_COST_SERVICE_URL", err=True)
                 cur = self.conn.cursor(AsyncCursor) # add, for cancel query
                 query_id, future = cur.execute(sql)
                 res_result = self.get_result(query_id, future, is_part)
