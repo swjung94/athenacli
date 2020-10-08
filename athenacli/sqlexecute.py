@@ -30,8 +30,9 @@ def get_parameter_value(Name, default=None, WithDecryption=False):
     except:
         return default
 
+parameter_store_name_path = os.getenv('PARAMETER_STORE_NAME_PATH', '/skinet/key-value')
 QUERY_COST_SERVICE_URL = os.getenv('QUERY_COST_SERVICE_URL', 'None')
-QUERY_SERVICE_URL = get_parameter_value("/skinet/key-value/apigateway/skn_athena")
+QUERY_SERVICE_URL = get_parameter_value(parameter_store_name_path + "/apigateway/skn_athena")
 
 class SQLExecute(object):
     DATABASES_QUERY = 'SHOW DATABASES'
@@ -56,7 +57,7 @@ class SQLExecute(object):
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_session_token = aws_session_token
         self.region_name = region_name
-        self.s3_staging_dir = "s3://" + get_parameter_value('/skinet/key-value/s3/upload_path', s3_staging_dir)
+        self.s3_staging_dir = "s3://" + get_parameter_value(parameter_store_name_path + '/s3/upload_path', s3_staging_dir)
         self.database = database
 
         self.connect()
