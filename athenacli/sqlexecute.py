@@ -14,6 +14,7 @@ import json
 import boto3
 
 from athenacli.packages import special
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,18 @@ def keyboardInterruptHandler(signal, frame):
     raise KeyboardInterrupt
 
 signal.signal(signal.SIGINT, keyboardInterruptHandler)
+
+def is_update_query(sql):
+    """
+    create table이나 drop table같은 udpate성 쿼리를 선별한다.
+    """
+    create_stmt = re.match("\s*create\s+(external\s+|)table\s+.*", sql, re.IGNORECASE)
+    drop_stat = re.match("\s*drop\s+table\s+.*", sql, re.IGNORECASE)
+    insert_stmt = re.match("\s*insert\s+(into|overwrite)\s+.*", sql, re.IGNORECASE)
+    alter_stmt = re.match("\s*alter\s+(table|database)\s+.*", sql, re.IGNORECASE)
+    if all([create_stmt==None,drop_stat==None,insert_stmt==None,alter_stmt==None]) == True:
+        return False
+    return True
 
 def get_parameter_value(Name, default=None, WithDecryption=False):
     try:
@@ -134,6 +147,50 @@ class SQLExecute(object):
             rs = -1
         return rs
 
+
+    def AthenaSendUpdate(self, qry):
+        user_id = os.getenv('user_id')
+        if user_id == None:
+            click.echo("query Failed, plaese set user_id", err=True)
+            return (0, 0)
+        headers = {"Content-Type": "application/json"}
+        try:
+            data = {'user_id': user_id, 'database': self.database, 'query': qry}
+            appData = json.loads(requests.post( self.query_service+"/run_query", json=data, headers=headers).text)
+
+            if appData['result'] != "success":
+                click.echo("query failed, result is not success", err=True)
+                click.echo(appData['data']['query_id'], err=True)
+                return (0, 0)
+
+            while(True):
+                data2 = {'user_id': user_id, 'query_id': appData['data']['query_id']}
+                query_stat = json.loads(requests.post( self.query_service+"/get_query_status", json=data2, headers=headers).text)
+
+                if query_stat['data']['state'] == "SUCCEEDED":
+                    click.echo("query succeeded", err=True)
+                    break
+
+                if query_stat['data']['state'] == "FAILED":
+                    click.echo("query failed!", err=True)
+                    click.echo(query_stat['data']['state_change_reason'], err=True)
+                    return (0, 0)
+                click.echo(".", err=True, nl=False)
+                time.sleep(1)
+        except KeyboardInterrupt:
+            data3 = {'user_id': user_id, 'query_id': appData['data']['query_id']}
+            stop_query = json.loads(requests.post( self.query_service+"/stop_query", json=data3, headers=headers).text)
+            if stop_query['result'] == 'success':
+                click.echo("Keboard Interrupt. Query " + stop_query['data']['state'], err=True)
+                return (stop_query['data']['running_time'], stop_query['data']['scan_size'])
+            else:
+                click.echo("cancel query failed", err=True)
+                return (0, 0)
+        except:
+            traceback.print_exc()
+        return (query_stat['data']['running_time'], query_stat['data']['scan_size'])
+
+
     def run(self, statement, is_part=True):
         '''Execute the sql in the database and return the results.
 
@@ -177,11 +234,21 @@ class SQLExecute(object):
                         click.echo("Can't estimate query cost...", err=True)
                 else:
                     click.echo("Can't service query cost... please check QUERY_COST_SERVICE_URL", err=True)
-                cur = self.conn.cursor(AsyncCursor) # add, for cancel query
-                query_id, future = cur.execute(sql)
-                res_result = self.get_result(query_id, future, is_part)
-                res_info = self.get_info(query_id)
+                try:
+                    if is_update_query(sql) == True:
+                        res_info = self.AthenaSendUpdate(sql)
+                        if res_info != None:
+                            res_result = (None, None, None, "Success")
+                    else:
+                        cur = self.conn.cursor(AsyncCursor) # add, for cancel query
+                        query_id, future = cur.execute(sql)
+                        res_result = self.get_result(query_id, future, is_part)
+                        res_info = self.get_info(query_id)
+                except Exception as e:
+                    res_result = (None, None, None, None)
+                    res_info = (0, 0)
                 yield res_result + res_info
+
 
     def get_info(self, query_id):
         if query_id == None:
